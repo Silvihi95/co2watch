@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="de" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CO₂Watch – Industrielle Emissionsdaten</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green:#2e7d32; --green-light:#43a047; --green-pale:#e8f5e9; --green-mid:#c8e6c9;
+      --orange:#e65100; --red:#c62828;
+      --text:#1a1a1a; --muted:#666; --border:#ddd; --bg:#f5f5f5; --white:#fff;
+      --font:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+      --shadow:0 1px 4px rgba(0,0,0,.08); --shadow-md:0 2px 12px rgba(0,0,0,.1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);line-height:1.6}
+
+    header{background:var(--white);border-bottom:2px solid var(--green);position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+    .header-inner{max-width:1200px;margin:0 auto;padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+    .logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;flex-shrink:0}
+    .logo-icon{width:32px;height:32px;background:var(--green);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px}
+    .logo-text{font-weight:700;font-size:1.1rem;color:var(--green)}
+    nav.global-nav{display:flex;align-items:center;gap:.1rem}
+    nav.global-nav a{color:var(--muted);text-decoration:none;padding:.4rem .8rem;border-radius:4px;font-size:.85rem;font-weight:500;transition:color .15s,background .15s}
+    nav.global-nav a:hover,nav.global-nav a.active{color:var(--green);background:var(--green-pale)}
+    .header-right{display:flex;align-items:center;gap:.5rem}
+    .lang-toggle{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+    .lang-toggle button{background:none;border:none;padding:.3rem .6rem;font-family:var(--font);font-size:.75rem;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
+    .lang-toggle button.active{background:var(--green);color:#fff}
+    .hamburger{display:none;background:none;border:1px solid var(--border);padding:.35rem .5rem;border-radius:4px;cursor:pointer;font-size:1rem;color:var(--text)}
+
+    .page-wrapper{max-width:1200px;margin:0 auto;padding:1.5rem;display:grid;grid-template-columns:200px 1fr;gap:1.5rem;align-items:start}
+
+    .local-nav{position:sticky;top:72px;background:var(--white);border:1px solid var(--border);border-radius:6px;padding:1rem;box-shadow:var(--shadow)}
+    .local-nav h3{font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+    .local-nav ul{list-style:none}
+    .local-nav li+li{margin-top:.1rem}
+    .local-nav a{display:flex;align-items:center;gap:.5rem;color:var(--muted);text-decoration:none;padding:.4rem .6rem;border-radius:4px;font-size:.83rem;font-weight:500;border-left:3px solid transparent;transition:all .15s}
+    .local-nav a:hover,.local-nav a.active{color:var(--green);background:var(--green-pale);border-left-color:var(--green)}
+    [dir="rtl"] .local-nav a{border-left:none;border-right:3px solid transparent}
+    [dir="rtl"] .local-nav a:hover,[dir="rtl"] .local-nav a.active{border-right-color:var(--green)}
+
+    main{min-width:0}
+
+    .page-title{background:var(--white);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;box-shadow:var(--shadow)}
+    .page-title .tag{display:inline-block;background:var(--green-pale);color:var(--green);border:1px solid var(--green-mid);padding:.15rem .6rem;border-radius:3px;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.6rem}
+    .page-title h1{font-size:1.5rem;font-weight:700;margin-bottom:.3rem}
+    .page-title p{color:var(--muted);font-size:.875rem}
+
+    .stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:1.25rem}
+    .stat-card{background:var(--white);border:1px solid var(--border);border-top:3px solid var(--green);border-radius:6px;padding:1rem;box-shadow:var(--shadow)}
+    .stat-card.warn{border-top-color:var(--orange)}
+    .stat-card.danger{border-top-color:var(--red)}
+    .stat-value{font-size:1.5rem;font-weight:700;line-height:1;margin-bottom:.25rem;font-family:var(--mono)}
+    .stat-label{color:var(--muted);font-size:.72rem;font-weight:500}
+
+    .card{background:var(--white);border:1px solid var(--border);border-radius:6px;box-shadow:var(--shadow);margin-bottom:1.25rem}
+    .card-header{padding:.875rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+    .card-header h2{font-size:.95rem;font-weight:600}
+    .card-body{padding:1.25rem}
+
+    .table-controls{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1rem}
+    .input-wrap{position:relative;flex:2;min-width:160px}
+    .input-wrap .ico{position:absolute;left:.6rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem;pointer-events:none}
+    [dir="rtl"] .input-wrap .ico{left:auto;right:.6rem}
+    .input-wrap input,.input-wrap select,select.ctrl-select{width:100%;background:var(--white);border:1px solid var(--border);color:var(--text);padding:.5rem .7rem .5rem 2rem;border-radius:4px;font-family:var(--font);font-size:.83rem;outline:none;transition:border-color .15s;appearance:none}
+    [dir="rtl"] .input-wrap input,[dir="rtl"] .input-wrap select{padding:.5rem 2rem .5rem .7rem}
+    .input-wrap input:focus,.input-wrap select:focus,select.ctrl-select:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(46,125,50,.1)}
+    .input-wrap input::placeholder{color:#aaa}
+    select.ctrl-select{padding:.5rem 1.5rem .5rem .7rem;flex-shrink:0;width:auto;cursor:pointer}
+    .btn{background:var(--green);color:#fff;border:none;padding:.5rem 1rem;border-radius:4px;font-family:var(--font);font-size:.83rem;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap}
+    .btn:hover{background:var(--green-light)}
+    .btn-outline{background:none;border:1px solid var(--border);color:var(--muted)}
+    .btn-outline:hover{border-color:var(--green);color:var(--green);background:var(--green-pale)}
+
+    .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:4px}
+    table{width:100%;border-collapse:collapse;font-size:.83rem}
+    thead tr{background:#f9f9f9;border-bottom:2px solid var(--border)}
+    th{padding:.7rem 1rem;text-align:left;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
+    [dir="rtl"] th,[dir="rtl"] td{text-align:right}
+    th:hover,th.sorted{color:var(--green)}
+    th .sort-icon{margin-left:.3rem;opacity:.5}
+    th.sorted .sort-icon{opacity:1}
+    tbody tr{border-bottom:1px solid #f0f0f0;transition:background .1s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:var(--green-pale)}
+    td{padding:.7rem 1rem}
+    .td-rank{color:var(--muted);font-family:var(--mono);font-size:.75rem;width:40px}
+    .td-num{font-family:var(--mono);font-weight:500}
+    .td-bar-wrap{display:flex;align-items:center;gap:.6rem}
+    .td-bar{height:6px;border-radius:3px;background:var(--green);min-width:2px;flex-shrink:0}
+    .td-bar.high{background:var(--orange)}
+    .td-bar.crit{background:var(--red)}
+    .no-results{text-align:center;padding:2.5rem;color:var(--muted);font-size:.875rem}
+    .table-footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;color:var(--muted);font-size:.75rem}
+
+    .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+    .info-item{border:1px solid var(--border);border-radius:4px;padding:1rem;background:#fafafa}
+    .info-item h4{font-size:.85rem;font-weight:600;margin-bottom:.4rem;color:var(--green)}
+    .info-item p{color:var(--muted);font-size:.8rem;line-height:1.65}
+
+    .contact-form{max-width:520px}
+    .form-row{margin-bottom:.9rem}
+    .form-row label{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:.3rem;letter-spacing:.04em;text-transform:uppercase}
+    .form-row input,.form-row textarea{width:100%;border:1px solid var(--border);background:var(--white);color:var(--text);padding:.55rem .75rem;border-radius:4px;font-family:var(--font);font-size:.83rem;outline:none;transition:border-color .15s;resize:vertical}
+    .form-row input:focus,.form-row textarea:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(46,125,50,.1)}
+    .form-error{color:var(--red);font-size:.72rem;margin-top:.3rem;display:none}
+    .form-success{background:var(--green-pale);border:1px solid var(--green-mid);color:var(--green);padding:.65rem .9rem;border-radius:4px;font-size:.83rem;display:none;margin-top:.75rem}
+
+    footer{background:var(--white);border-top:1px solid var(--border);margin-top:2rem}
+    .footer-inner{max-width:1200px;margin:0 auto;padding:1.75rem 1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1.5rem}
+    .footer-brand p{color:var(--muted);font-size:.78rem;margin-top:.5rem;line-height:1.6}
+    .footer-col h5{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.65rem}
+    .footer-col ul{list-style:none}
+    .footer-col li+li{margin-top:.3rem}
+    .footer-col a{color:var(--muted);text-decoration:none;font-size:.8rem;transition:color .15s}
+    .footer-col a:hover{color:var(--green)}
+    .footer-bottom{max-width:1200px;margin:0 auto;padding:.875rem 1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;font-size:.72rem;color:var(--muted)}
+    .footer-bottom a{color:var(--muted);text-decoration:none}
+    .footer-bottom a:hover{color:var(--green)}
+
+    @media(max-width:900px){.page-wrapper{grid-template-columns:1fr}.local-nav{position:static;display:none}.local-nav.open{display:block}}
+    @media(max-width:600px){nav.global-nav{display:none}nav.global-nav.open{display:flex;flex-direction:column;position:absolute;top:56px;left:0;right:0;background:var(--white);border-bottom:1px solid var(--border);padding:.75rem 1rem;z-index:99;box-shadow:var(--shadow-md)}.hamburger{display:block}.stats-bar{grid-template-columns:1fr 1fr}}
+
+    .legal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.4);align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
+    .legal-overlay.open{display:flex}
+    .legal-modal{background:var(--white);border:1px solid var(--border);border-radius:6px;width:100%;max-width:720px;padding:2rem;position:relative;margin:auto;box-shadow:var(--shadow-md)}
+    .legal-close{position:absolute;top:1rem;right:1rem;background:none;border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .legal-close:hover{border-color:var(--green);color:var(--green)}
+    .legal-modal h2{font-size:1.2rem;font-weight:700;margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:2px solid var(--green)}
+    .legal-modal h3{font-size:.9rem;font-weight:600;color:var(--green);margin:1.25rem 0 .4rem}
+    .legal-modal p,.legal-modal li{color:var(--muted);font-size:.83rem;line-height:1.75;margin-bottom:.4rem}
+    .legal-modal ul{list-style:disc;padding-left:1.25rem;margin-bottom:.6rem}
+    .legal-modal a{color:var(--green);text-decoration:none}
+    .legal-modal a:hover{text-decoration:underline}
+    .legal-nav{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:1.25rem;padding-bottom:.875rem;border-bottom:1px solid var(--border)}
+    .legal-nav button{background:none;border:1px solid var(--border);color:var(--muted);padding:.3rem .75rem;border-radius:4px;font-family:var(--font);font-size:.78rem;font-weight:500;cursor:pointer;transition:all .15s}
+    .legal-nav button:hover,.legal-nav button.active{border-color:var(--green);color:var(--green);background:var(--green-pale)}
+
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .page-title{animation:fadeIn .3s ease both}
+    .stats-bar{animation:fadeIn .3s .05s ease both}
+    .card{animation:fadeIn .3s .1s ease both}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo" aria-label="CO₂Watch Startseite">
+      <div class="logo-icon">🌍</div>
+      <span class="logo-text">CO₂Watch</span>
+    </a>
+    <nav class="global-nav" id="globalNav" role="navigation" aria-label="Globale Navigation">
+      <a href="#uebersicht" class="active">Übersicht</a>
+      <a href="#tabelle">Daten</a>
+      <a href="#ueber">Über uns</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
+    <div class="header-right">
+      <div class="lang-toggle" role="group" aria-label="Schriftrichtung">
+        <button id="btnLTR" class="active" onclick="setDir('ltr')" aria-pressed="true">LTR</button>
+        <button id="btnRTL" onclick="setDir('rtl')" aria-pressed="false">RTL</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menü öffnen" aria-expanded="false">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <aside>
+    <nav class="local-nav" id="localNav" role="navigation" aria-label="Seitennavigation">
+      <h3>Auf dieser Seite</h3>
+      <ul>
+        <li><a href="#uebersicht" class="active">📊 Übersicht</a></li>
+        <li><a href="#tabelle">📋 Emissionstabelle</a></li>
+        <li><a href="#ueber">ℹ️ Über das Projekt</a></li>
+        <li><a href="#kontakt">✉️ Kontakt</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main>
+    <section id="uebersicht">
+      <div class="page-title">
+        <div class="tag">⚠ Fiktive Beispieldaten</div>
+        <h1>CO₂-Emissionen der Industrie weltweit</h1>
+        <p>Jährliche Treibhausgasemissionen großer Industrieunternehmen nach Land und Jahr – sortierbar und filterbar.</p>
+      </div>
+      <div class="stats-bar" role="region" aria-label="Kennzahlen">
+        <div class="stat-card danger"><div class="stat-value">9,4 Gt</div><div class="stat-label">Industrieemissionen 2024</div></div>
+        <div class="stat-card warn"><div class="stat-value">+0,8 %</div><div class="stat-label">Anstieg gegenüber 2023</div></div>
+        <div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Erfasste Länder</div></div>
+        <div class="stat-card"><div class="stat-value">2020–2024</div><div class="stat-label">Erfasste Jahre</div></div>
+      </div>
+    </section>
+
+    <section id="tabelle">
+      <div class="card">
+        <div class="card-header"><span>📋</span><h2>CO₂-Emissionsdaten – Industrie</h2></div>
+        <div class="card-body">
+          <div class="table-controls" role="search" aria-label="Tabellenfilter">
+            <div class="input-wrap" style="flex:2;min-width:160px;">
+              <span class="ico">🔍</span>
+              <input type="text" id="searchInput" placeholder="Land oder Unternehmen suchen …" aria-label="Suche" maxlength="100" autocomplete="off" />
+            </div>
+            <div class="input-wrap" style="flex:1;min-width:130px;">
+              <span class="ico">🌍</span>
+              <select id="filterLand" aria-label="Nach Land filtern"></select>
+            </div>
+            <select class="ctrl-select" id="filterJahr" aria-label="Nach Jahr filtern">
+              <option value="">Alle Jahre</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+              <option value="2022">2022</option>
+              <option value="2021">2021</option>
+              <option value="2020">2020</option>
+            </select>
+            <select class="ctrl-select" id="sortSelect" aria-label="Sortierung">
+              <option value="emissionen-desc">CO₂-Ausstoß ↓</option>
+              <option value="emissionen-asc">CO₂-Ausstoß ↑</option>
+              <option value="land-asc">Land A–Z</option>
+              <option value="land-desc">Land Z–A</option>
+              <option value="jahr-desc">Jahr ↓</option>
+              <option value="jahr-asc">Jahr ↑</option>
+            </select>
+            <button class="btn btn-outline" onclick="resetFilters()">↺ Reset</button>
+          </div>
+
+          <div class="table-wrap" role="region" aria-live="polite">
+            <table id="emissionTable" aria-label="CO₂-Emissionsdaten Industrie">
+              <thead><tr>
+                <th class="td-rank">#</th>
+                <th onclick="sortBy('land')" id="th-land">Land <span class="sort-icon">⇅</span></th>
+                <th onclick="sortBy('unternehmen')" id="th-unternehmen">Unternehmen <span class="sort-icon">⇅</span></th>
+                <th onclick="sortBy('jahr')" id="th-jahr">Jahr <span class="sort-icon">⇅</span></th>
+                <th onclick="sortBy('emissionen')" id="th-emissionen" class="sorted">CO₂-Ausstoß (kt) <span class="sort-icon">↓</span></th>
+              </tr></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <span id="resultCount" aria-live="polite">0 Einträge</span>
+            <span>Daten: fiktiv · Einheit: Kilotonne CO₂</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="ueber">
+      <div class="card">
+        <div class="card-header"><span>ℹ️</span><h2>Über das Projekt</h2></div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div class="info-item"><h4>🎯 Unser Ziel</h4><p>Wir schaffen Transparenz über CO₂-Emissionen der Industrie weltweit. CO₂Watch macht Klimadaten für alle zugänglich und verständlich.</p></div>
+            <div class="info-item"><h4>📊 Methodik</h4><p>Alle dargestellten Daten sind vollständig fiktiv und dienen ausschließlich der Demonstration dieser Webanwendung.</p></div>
+            <div class="info-item"><h4>🌱 Engagement</h4><p>CO₂Watch ist ein Non-Profit-Projekt – kostenlos, werbefrei und unabhängig.</p></div>
+            <div class="info-item"><h4>🔒 Datenschutz</h4><p>Diese Webseite erhebt keine personenbezogenen Daten. Kein Tracking, keine Cookies.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="kontakt">
+      <div class="card">
+        <div class="card-header"><span>✉️</span><h2>Kontakt</h2></div>
+        <div class="card-body">
+          <div class="contact-form">
+            <div class="form-row"><label for="cfName">Name</label><input type="text" id="cfName" placeholder="Max Mustermann" maxlength="80" autocomplete="name" /><div class="form-error" id="errName">Bitte gib deinen Namen ein.</div></div>
+            <div class="form-row"><label for="cfEmail">E-Mail</label><input type="email" id="cfEmail" placeholder="max@beispiel.de" maxlength="120" autocomplete="email" /><div class="form-error" id="errEmail">Bitte gib eine gültige E-Mail-Adresse ein.</div></div>
+            <div class="form-row"><label for="cfMsg">Nachricht</label><textarea id="cfMsg" rows="4" placeholder="Deine Nachricht …" maxlength="1000"></textarea><div class="form-error" id="errMsg">Bitte gib eine Nachricht ein.</div></div>
+            <button class="btn" onclick="submitContact()" type="button">Nachricht senden</button>
+            <div class="form-success" id="formSuccess" role="status">✓ Danke! Deine Nachricht wurde gesendet.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span style="font-weight:700;color:var(--green);font-size:1rem;">🌍 CO₂Watch</span>
+      <p>Transparenz über globale<br/>Industrieemissionen.<br/>Non-Profit · Open Source.</p>
+    </div>
+    <div class="footer-col"><h5>Navigation</h5><ul><li><a href="#uebersicht">Übersicht</a></li><li><a href="#tabelle">Emissionsdaten</a></li><li><a href="#ueber">Über uns</a></li><li><a href="#kontakt">Kontakt</a></li></ul></div>
+    <div class="footer-col"><h5>Rechtliches</h5><ul><li><a href="#impressum">Impressum</a></li><li><a href="#datenschutz">Datenschutzerklärung</a></li><li><a href="#nutzungsbedingungen">Nutzungsbedingungen</a></li><li><a href="#barrierefreiheit">Barrierefreiheit</a></li></ul></div>
+    <div class="footer-col"><h5>Hinweise</h5><ul><li><a href="#quellen">Quellenangaben</a></li><li><a href="#methodik">Methodik</a></li><li><a href="https://github.com/Silvihi95/co2watch" target="_blank" rel="noopener">GitHub Repository</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2024 CO₂Watch – Alle Daten sind fiktiv und dienen ausschließlich zu Demonstrationszwecken.</span>
+    <span><a href="#impressum">Impressum</a> · <a href="#datenschutz">Datenschutz</a> · <a href="#nutzungsbedingungen">Nutzungsbedingungen</a></span>
+  </div>
+</footer>
+
+<!-- LEGAL MODAL -->
+<div class="legal-overlay" id="legalOverlay" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="legal-modal">
+    <button class="legal-close" onclick="closeLegal()" aria-label="Schließen">✕</button>
+    <div class="legal-nav">
+      <button onclick="switchLegal('impressum')" id="tab-impressum">Impressum</button>
+      <button onclick="switchLegal('datenschutz')" id="tab-datenschutz">Datenschutz</button>
+      <button onclick="switchLegal('nutzungsbedingungen')" id="tab-nutzungsbedingungen">Nutzungsbedingungen</button>
+      <button onclick="switchLegal('barrierefreiheit')" id="tab-barrierefreiheit">Barrierefreiheit</button>
+      <button onclick="switchLegal('quellen')" id="tab-quellen">Quellen</button>
+      <button onclick="switchLegal('methodik')" id="tab-methodik">Methodik</button>
+    </div>
+    <div id="impressum" class="legal-page" hidden><h2>Impressum</h2><h3>Angaben gemäß § 5 TMG</h3><p>CO₂Watch – Initiative für Klimatransparenz e. V. (fiktiv)<br/>Musterstraße 42, 12345 Musterstadt</p><h3>Kontakt</h3><p>E-Mail: <a href="mailto:kontakt@co2watch.example">kontakt@co2watch.example</a></p><h3>Haftungsausschluss</h3><p>Alle dargestellten Daten sind vollständig fiktiv und dienen ausschließlich zu Demonstrations- und Lehrzwecken.</p><h3>Streitschlichtung</h3><p>EU-Plattform: <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener">ec.europa.eu/consumers/odr</a></p></div>
+    <div id="datenschutz" class="legal-page" hidden><h2>Datenschutzerklärung</h2><h3>1. Verantwortliche Stelle</h3><p>CO₂Watch – Initiative für Klimatransparenz e. V. (fiktiv)</p><h3>2. Erhebung personenbezogener Daten</h3><p>Diese Webseite erhebt <strong>keine personenbezogenen Daten</strong>. Keine Cookies, kein Tracking.</p><h3>3. Server-Logfiles</h3><p>GitHub Pages erfasst automatisch Server-Logfiles (anonymisierte IP-Adresse, Browsertyp).</p><h3>4. Google Fonts</h3><p>Diese Seite lädt Schriftarten von Google-Servern (Art. 6 Abs. 1 lit. f DSGVO).</p><h3>5. Ihre Rechte</h3><p>Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17 DSGVO). Kontakt: <a href="mailto:datenschutz@co2watch.example">datenschutz@co2watch.example</a></p></div>
+    <div id="nutzungsbedingungen" class="legal-page" hidden><h2>Nutzungsbedingungen</h2><h3>1. Zweck</h3><p>CO₂Watch ist eine gemeinnützige Informationsplattform. Alle Daten sind fiktiv.</p><h3>2. Nutzungsrechte</h3><p>Inhalte stehen unter <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p><h3>3. Haftung</h3><p>Da alle Daten fiktiv sind, wird keine Gewähr für deren Richtigkeit übernommen.</p><h3>4. Anwendbares Recht</h3><p>Es gilt deutsches Recht.</p></div>
+    <div id="barrierefreiheit" class="legal-page" hidden><h2>Barrierefreiheitserklärung</h2><h3>Unser Anspruch</h3><p>CO₂Watch strebt WCAG 2.1 Konformitätsstufe AA an.</p><h3>Umgesetzte Maßnahmen</h3><ul><li>Semantisches HTML5 mit ARIA-Labels</li><li>Ausreichende Farbkontraste (min. 4,5:1)</li><li>Vollständige Tastaturnavigation</li><li>Screenreader-freundliche Live-Regions</li><li>Responsives, skalierbares Layout</li></ul></div>
+    <div id="quellen" class="legal-page" hidden><h2>Quellenangaben</h2><ul><li>Mozilla Developer Network. (2024). <em>HTML, CSS, JavaScript</em>. <a href="https://developer.mozilla.org/de/" target="_blank" rel="noopener">developer.mozilla.org</a></li><li>OWASP Foundation. (2024). <em>XSS Prevention Cheat Sheet</em>. <a href="https://cheatsheetseries.owasp.org" target="_blank" rel="noopener">cheatsheetseries.owasp.org</a></li><li>W3C. (2024). <em>WCAG 2.1</em>. <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener">w3.org</a></li><li>Google LLC. (2024). <em>Google Fonts</em>. <a href="https://fonts.google.com" target="_blank" rel="noopener">fonts.google.com</a></li></ul><p>Alle CO₂-Daten sind vollständig fiktiv.</p></div>
+    <div id="methodik" class="legal-page" hidden><h2>Methodik</h2><h3>Datengrundlage</h3><p>Alle dargestellten Daten sind <strong>vollständig fiktiv</strong>.</p><h3>Emissionseinheit</h3><p>Kilotonne CO₂-Äquivalent (kt CO₂e) — angelehnt an reale Berichtspraktiken.</p><h3>Zeitraum</h3><p>Die Tabelle enthält Daten für die Jahre 2020 bis 2024, sodass Trends über mehrere Jahre erkennbar sind.</p><h3>Länderauswahl</h3><p>Die dargestellten Länder repräsentieren die weltweit größten Industrieemittenten.</p></div>
+  </div>
+</div>
+
+<script>
+function escapeHTML(s){if(typeof s!=='string')return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;').replace(/\//g,'&#x2F;')}
+function sanitize(i,m=200){if(!i)return '';return i.replace(/<[^>]*>/g,'').replace(/on\w+\s*=/gi,'').replace(/(script|iframe|object|embed|form|input|button)/gi,'').trim().slice(0,m)}
+document.querySelectorAll('input[type="text"],textarea').forEach(el=>{el.addEventListener('input',()=>{const p=el.selectionStart;const c=sanitize(el.value,parseInt(el.maxLength)||200);if(c!==el.value){el.value=c;try{el.setSelectionRange(p,p)}catch(e){}}})});
+
+/* Dataset – Industrie, 2020–2024, eine Firma pro Land */
+const rawData = [
+  {land:'China',       unternehmen:'Huawei Technologies',  jahr:2024, emissionen:218400},
+  {land:'China',       unternehmen:'Huawei Technologies',  jahr:2023, emissionen:214200},
+  {land:'China',       unternehmen:'Huawei Technologies',  jahr:2022, emissionen:209800},
+  {land:'China',       unternehmen:'Huawei Technologies',  jahr:2021, emissionen:204500},
+  {land:'China',       unternehmen:'Huawei Technologies',  jahr:2020, emissionen:198300},
+  {land:'USA',         unternehmen:'Apple Inc.',           jahr:2024, emissionen:87300},
+  {land:'USA',         unternehmen:'Apple Inc.',           jahr:2023, emissionen:89100},
+  {land:'USA',         unternehmen:'Apple Inc.',           jahr:2022, emissionen:91400},
+  {land:'USA',         unternehmen:'Apple Inc.',           jahr:2021, emissionen:88700},
+  {land:'USA',         unternehmen:'Apple Inc.',           jahr:2020, emissionen:82100},
+  {land:'Indien',      unternehmen:'Tata Steel',           jahr:2024, emissionen:96500},
+  {land:'Indien',      unternehmen:'Tata Steel',           jahr:2023, emissionen:93200},
+  {land:'Indien',      unternehmen:'Tata Steel',           jahr:2022, emissionen:90100},
+  {land:'Indien',      unternehmen:'Tata Steel',           jahr:2021, emissionen:86400},
+  {land:'Indien',      unternehmen:'Tata Steel',           jahr:2020, emissionen:81700},
+  {land:'Japan',       unternehmen:'Sony Group',           jahr:2024, emissionen:68100},
+  {land:'Japan',       unternehmen:'Sony Group',           jahr:2023, emissionen:70400},
+  {land:'Japan',       unternehmen:'Sony Group',           jahr:2022, emissionen:72800},
+  {land:'Japan',       unternehmen:'Sony Group',           jahr:2021, emissionen:71200},
+  {land:'Japan',       unternehmen:'Sony Group',           jahr:2020, emissionen:68900},
+  {land:'Deutschland', unternehmen:'Siemens AG',           jahr:2024, emissionen:29000},
+  {land:'Deutschland', unternehmen:'Siemens AG',           jahr:2023, emissionen:30200},
+  {land:'Deutschland', unternehmen:'Siemens AG',           jahr:2022, emissionen:31800},
+  {land:'Deutschland', unternehmen:'Siemens AG',           jahr:2021, emissionen:33100},
+  {land:'Deutschland', unternehmen:'Siemens AG',           jahr:2020, emissionen:34700},
+  {land:'Brasilien',   unternehmen:'Embraer S.A.',         jahr:2024, emissionen:41200},
+  {land:'Brasilien',   unternehmen:'Embraer S.A.',         jahr:2023, emissionen:42800},
+  {land:'Brasilien',   unternehmen:'Embraer S.A.',         jahr:2022, emissionen:44100},
+  {land:'Brasilien',   unternehmen:'Embraer S.A.',         jahr:2021, emissionen:43500},
+  {land:'Brasilien',   unternehmen:'Embraer S.A.',         jahr:2020, emissionen:41900},
+  {land:'Südkorea',    unternehmen:'Samsung Electronics',  jahr:2024, emissionen:58400},
+  {land:'Südkorea',    unternehmen:'Samsung Electronics',  jahr:2023, emissionen:60100},
+  {land:'Südkorea',    unternehmen:'Samsung Electronics',  jahr:2022, emissionen:61800},
+  {land:'Südkorea',    unternehmen:'Samsung Electronics',  jahr:2021, emissionen:60400},
+  {land:'Südkorea',    unternehmen:'Samsung Electronics',  jahr:2020, emissionen:58900},
+  {land:'Russland',    unternehmen:'Gazprom',              jahr:2024, emissionen:47600},
+  {land:'Russland',    unternehmen:'Gazprom',              jahr:2023, emissionen:48900},
+  {land:'Russland',    unternehmen:'Gazprom',              jahr:2022, emissionen:50200},
+  {land:'Russland',    unternehmen:'Gazprom',              jahr:2021, emissionen:49400},
+  {land:'Russland',    unternehmen:'Gazprom',              jahr:2020, emissionen:47100},
+  {land:'Australien',  unternehmen:'BHP Group',            jahr:2024, emissionen:32000},
+  {land:'Australien',  unternehmen:'BHP Group',            jahr:2023, emissionen:33400},
+  {land:'Australien',  unternehmen:'BHP Group',            jahr:2022, emissionen:34900},
+  {land:'Australien',  unternehmen:'BHP Group',            jahr:2021, emissionen:35800},
+  {land:'Australien',  unternehmen:'BHP Group',            jahr:2020, emissionen:36200},
+  {land:'UK',          unternehmen:'BP plc',               jahr:2024, emissionen:18700},
+  {land:'UK',          unternehmen:'BP plc',               jahr:2023, emissionen:19800},
+  {land:'UK',          unternehmen:'BP plc',               jahr:2022, emissionen:21200},
+  {land:'UK',          unternehmen:'BP plc',               jahr:2021, emissionen:22100},
+  {land:'UK',          unternehmen:'BP plc',               jahr:2020, emissionen:23400},
+  {land:'Frankreich',  unternehmen:'TotalEnergies',        jahr:2024, emissionen:16300},
+  {land:'Frankreich',  unternehmen:'TotalEnergies',        jahr:2023, emissionen:17100},
+  {land:'Frankreich',  unternehmen:'TotalEnergies',        jahr:2022, emissionen:18400},
+  {land:'Frankreich',  unternehmen:'TotalEnergies',        jahr:2021, emissionen:17800},
+  {land:'Frankreich',  unternehmen:'TotalEnergies',        jahr:2020, emissionen:16900},
+];
+
+let sortField='emissionen', sortDir='desc';
+
+(function(){
+  const s=document.getElementById('filterLand');
+  s.innerHTML='<option value="">Alle Länder</option>';
+  [...new Set(rawData.map(d=>d.land))].sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;s.appendChild(o)});
+})();
+
+function renderTable(data){
+  const tb=document.getElementById('tableBody');
+  const mx=Math.max(...rawData.map(d=>d.emissionen));
+  if(!data.length){
+    tb.innerHTML='<tr><td colspan="5" class="no-results">Keine Einträge gefunden.</td></tr>';
+    document.getElementById('resultCount').textContent='0 Einträge';
+    return;
+  }
+  tb.innerHTML=data.map((r,i)=>{
+    const pct=Math.round((r.emissionen/mx)*100);
+    const bc=r.emissionen>150000?'crit':r.emissionen>80000?'high':'';
+    const em=r.emissionen.toLocaleString('de-DE');
+    return `<tr>
+      <td class="td-rank">${i+1}</td>
+      <td>${escapeHTML(r.land)}</td>
+      <td>${escapeHTML(r.unternehmen)}</td>
+      <td class="td-num">${escapeHTML(String(r.jahr))}</td>
+      <td><div class="td-bar-wrap"><div class="td-bar ${bc}" style="width:${pct}px;max-width:120px;"></div><span class="td-num">${escapeHTML(em)}</span></div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('resultCount').textContent=`${data.length} Eintr${data.length===1?'ag':'äge'}`;
+}
+
+function applyFilters(){
+  const q=sanitize(document.getElementById('searchInput').value,100).toLowerCase();
+  const l=sanitize(document.getElementById('filterLand').value,60);
+  const j=sanitize(document.getElementById('filterJahr').value,10);
+  let f=rawData.filter(r=>
+    (!q||r.land.toLowerCase().includes(q)||r.unternehmen.toLowerCase().includes(q))&&
+    (!l||r.land===l)&&
+    (!j||String(r.jahr)===j)
+  );
+  f.sort((a,b)=>{
+    let av=a[sortField],bv=b[sortField];
+    if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase()}
+    return av<bv?(sortDir==='asc'?-1:1):av>bv?(sortDir==='asc'?1:-1):0;
+  });
+  renderTable(f);
+}
+
+function sortBy(field){
+  sortDir=sortField===field?(sortDir==='asc'?'desc':'asc'):'desc';
+  sortField=field;
+  document.querySelectorAll('th').forEach(t=>{t.classList.remove('sorted');const ic=t.querySelector('.sort-icon');if(ic)ic.textContent='⇅'});
+  const el=document.getElementById('th-'+field);
+  if(el){el.classList.add('sorted');const ic=el.querySelector('.sort-icon');if(ic)ic.textContent=sortDir==='asc'?'↑':'↓'}
+  applyFilters();
+}
+
+document.getElementById('sortSelect').addEventListener('change',function(){[sortField,sortDir]=this.value.split('-');applyFilters()});
+
+function resetFilters(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('filterLand').value='';
+  document.getElementById('filterJahr').value='';
+  document.getElementById('sortSelect').value='emissionen-desc';
+  sortField='emissionen';sortDir='desc';
+  applyFilters();
+}
+
+['searchInput','filterLand','filterJahr'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',applyFilters);
+  document.getElementById(id).addEventListener('change',applyFilters);
+});
+applyFilters();
+
+function submitContact(){
+  let ok=true;
+  const n=sanitize(document.getElementById('cfName').value);
+  const e=sanitize(document.getElementById('cfEmail').value,120);
+  const m=sanitize(document.getElementById('cfMsg').value,1000);
+  ['errName','errEmail','errMsg'].forEach(id=>document.getElementById(id).style.display='none');
+  if(!n){document.getElementById('errName').style.display='block';ok=false}
+  if(!e||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){document.getElementById('errEmail').style.display='block';ok=false}
+  if(!m){document.getElementById('errMsg').style.display='block';ok=false}
+  if(ok){document.getElementById('formSuccess').style.display='block';document.getElementById('cfName').value='';document.getElementById('cfEmail').value='';document.getElementById('cfMsg').value=''}
+}
+
+function setDir(dir){
+  document.documentElement.setAttribute('dir',dir);
+  document.getElementById('btnLTR').classList.toggle('active',dir==='ltr');
+  document.getElementById('btnRTL').classList.toggle('active',dir==='rtl');
+  document.getElementById('btnLTR').setAttribute('aria-pressed',dir==='ltr');
+  document.getElementById('btnRTL').setAttribute('aria-pressed',dir==='rtl');
+}
+
+document.getElementById('hamburger').addEventListener('click',function(){
+  const n=document.getElementById('globalNav');
+  const o=n.classList.toggle('open');
+  this.setAttribute('aria-expanded',o);
+  this.textContent=o?'✕':'☰';
+});
+
+const sections=document.querySelectorAll('section[id]'),navLinks=document.querySelectorAll('a[href^="#"]');
+(()=>{const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id))})},{rootMargin:'-30% 0px -60% 0px'});sections.forEach(s=>obs.observe(s))})();
+
+function openLegal(id){document.getElementById('legalOverlay').classList.add('open');document.body.style.overflow='hidden';switchLegal(id)}
+function closeLegal(){document.getElementById('legalOverlay').classList.remove('open');document.body.style.overflow=''}
+function switchLegal(id){
+  document.querySelectorAll('.legal-page').forEach(p=>p.hidden=true);
+  document.querySelectorAll('.legal-nav button').forEach(b=>b.classList.remove('active'));
+  const p=document.getElementById(id);if(p)p.hidden=false;
+  const t=document.getElementById('tab-'+id);if(t)t.classList.add('active');
+}
+document.querySelectorAll('a[href^="#impressum"],a[href^="#datenschutz"],a[href^="#nutzungsbedingungen"],a[href^="#barrierefreiheit"],a[href^="#quellen"],a[href^="#methodik"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();openLegal(a.getAttribute('href').slice(1))});
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLegal()});
+</script>
+</body>
+</html>
